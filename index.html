@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Integer Overflow Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#131e30;--muted:#a6b7ce;--ink:#f2f6fc;--accent:#5ce0be;--warn:#ffbe75;--line:#2a3a52}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:44px 24px}header{margin-bottom:30px}.eyebrow{color:var(--accent);font-size:12px;letter-spacing:2px;font-weight:750;text-transform:uppercase}h1{font-size:clamp(32px,5vw,52px);letter-spacing:-2px;margin:8px 0}h2{font-size:21px;margin:0 0 16px}h3{font-size:16px;margin:0 0 8px}p{margin:8px 0;color:var(--muted)}.grid{display:grid;grid-template-columns:340px 1fr;gap:20px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px}.wide{grid-column:1/-1}label{display:block;font-size:14px;font-weight:650;margin-bottom:7px}select,input,button{font:inherit;border-radius:10px}select,input{width:100%;background:var(--bg);color:var(--ink);border:1px solid #50617a;padding:10px 12px}button{border:1px solid #50617a;background:#22344d;color:var(--ink);padding:10px 14px;cursor:pointer;font-weight:650}button:hover{background:#304867}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:3px}.primary{background:var(--accent);color:#09231e;border:0}.primary:hover{background:#a0f2db}.field{margin-bottom:18px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.presets{display:grid;gap:8px;margin-top:20px}.presets button{text-align:left;font-size:14px}.note{font-size:13px}.range{margin:12px 0 0;color:var(--accent);font-size:14px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}.stat{background:var(--bg);border-radius:12px;padding:14px}.stat span{display:block;color:var(--muted);font-size:13px}.stat strong{font-size:30px;font-variant-numeric:tabular-nums}.status{padding:12px 16px;border-radius:12px;background:#163b34;color:#a5f3d9;margin-bottom:20px}.status.overflow{background:#42301e;color:#ffce98}.binary{display:grid;gap:6px;margin-top:16px}.bit{text-align:center}.bit span{display:block;padding:10px 0;background:#1d3049;border:1px solid var(--line);border-radius:8px;font:700 24px ui-monospace,monospace}.bit.on span{background:#185343;border-color:#31866d;color:#b7ffe5}.bit.sign span{border:2px solid var(--warn)}.bit small{font-size:11px;color:var(--muted)}.marker-bar{height:12px;background:#2a3d55;border-radius:10px;position:relative;margin:28px 0 10px}.marker{position:absolute;top:-5px;width:22px;height:22px;border:3px solid var(--bg);border-radius:50%;background:var(--accent);transform:translateX(-50%)}.ends{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}.steps{margin:20px 0;padding-left:23px;color:var(--muted)}.steps li{padding:4px 0}.steps code,code{color:#c0eee4;overflow-wrap:anywhere}.compare{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}.compare th,.compare td{padding:10px;text-align:left;border-bottom:1px solid var(--line)}.compare th{color:var(--muted)}.challenge{display:grid;grid-template-columns:1fr 1fr;gap:22px}.challenge input{max-width:160px}.feedback{min-height:26px;color:var(--accent)}.error{color:#ffb7b7;font-size:14px;min-height:22px}.hidden{display:none}footer{font-size:13px;color:var(--muted);margin-top:24px}summary{cursor:pointer;color:var(--ink);font-weight:650}details{margin-top:18px}button:disabled{opacity:.45;cursor:not-allowed}@media(max-width:760px){main{padding:24px 16px}.grid,.challenge{grid-template-columns:1fr}.wide{grid-column:auto}.panel{padding:18px}.binary{gap:3px}.bit span{font-size:18px;padding:8px 0}.bit small{font-size:9px}.stats strong{font-size:25px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="eyebrow">A hands-on computer science lesson</div><h1>When numbers run out of room.</h1><p>Explore fixed-width arithmetic. Change the inputs, watch the bits, and see why the stored result can differ from the answer you expected.</p></header>
+<div class="grid">
+<section class="panel" aria-labelledby="controls-title"><h2 id="controls-title">01 / Set up a calculation</h2>
+<div class="row"><div class="field"><label for="width">Bit width</label><select id="width"><option value="4">4 bits</option><option value="8" selected>8 bits</option><option value="16">16 bits</option></select></div><div class="field"><label for="mode">Interpretation</label><select id="mode"><option value="unsigned">Unsigned</option><option value="signed">Signed</option></select></div></div>
+<p id="range" class="range"></p><p class="note">Signed mode uses two’s complement.</p>
+<form id="calculator" novalidate>
+<div class="field"><label for="a">First value (A)</label><input id="a" type="number" step="1" value="255" required></div>
+<div class="field"><label for="op">Operation</label><select id="op"><option value="+">Add (+)</option><option value="-">Subtract (−)</option><option value="*">Multiply (×)</option></select></div>
+<div class="field"><label for="b">Second value (B)</label><input id="b" type="number" step="1" value="1" required></div>
+<button class="primary" type="submit" style="width:100%">Calculate &amp; visualize</button><div id="error" class="error" role="alert"></div>
+</form>
+<div class="presets" aria-label="Example calculations"><button id="unsigned-example">Example: 255 + 1</button><button id="signed-example">Example: 127 + 1</button><button id="negative-example">Example: 0 − 1</button><button id="multiply-example">Example: 20 × 20</button></div>
+</section>
+<section class="panel" aria-labelledby="result-title"><h2 id="result-title">02 / Watch the result</h2>
+<div id="output" aria-live="polite" aria-atomic="true">
+<div class="stats"><div class="stat"><span>Mathematical result</span><strong id="exact"></strong></div><div class="stat"><span>Stored value</span><strong id="stored"></strong></div></div>
+<div id="status" class="status"></div><h3>Stored bit pattern</h3><div id="bits" class="binary" aria-label="Stored result in binary"></div><p id="bit-note" class="note"></p>
+<div class="marker-bar" aria-hidden="true"><div id="marker" class="marker"></div></div><div class="ends"><span id="min-label"></span><span id="max-label"></span></div>
+<ol id="steps" class="steps"></ol>
+<table class="compare"><caption>Same bits, two interpretations</caption><thead><tr><th scope="col">Unsigned</th><th scope="col">Signed (two’s complement)</th></tr></thead><tbody><tr><td id="as-unsigned"></td><td id="as-signed"></td></tr></tbody></table>
+</div>
+<div class="row" style="margin-top:18px"><button id="step-back">Stored value − 1</button><button id="step-forward">Stored value + 1</button></div><p class="note">Step buttons use the current stored value as A and 1 as B. Try crossing either end of the range.</p>
+</section>
+<section class="panel wide"><div class="challenge"><div><h2>03 / Predict before you calculate</h2><p id="question">For an unsigned 8-bit value, what is stored after 250 + 10?</p><form id="quiz"><label for="answer">Your predicted stored value</label><div class="row"><input id="answer" type="number" step="1" required><button type="submit">Check prediction</button></div></form><p id="feedback" class="feedback" role="status"></p><button id="next-question">Next challenge</button></div><div><h2>What this model means</h2><p>A fixed-width value has a limited number of bit patterns. Keeping only the lowest bits gives a result modulo 2<sup>n</sup>. Signed and unsigned modes interpret those same bits differently.</p><p><strong style="color:var(--warn)">Language behavior matters.</strong> C and C++ unsigned arithmetic wraps modulo 2<sup>n</sup>. Their signed arithmetic overflow is undefined behavior, so you cannot assume it wraps as this model does.</p><details><summary>Why should a programmer care?</summary><p>An overflowing count or size calculation can produce a much smaller value than intended. Safer code checks the range before calculating, uses checked arithmetic, or chooses a sufficiently wide type and still validates limits. This simulation uses ordinary JavaScript numbers and explicitly models narrow registers; it is not JavaScript’s default arithmetic.</p></details></div></div></section>
+</div><footer>Integer Overflow Lab · A safe arithmetic simulation · No dependencies, network requests, or attack functionality.</footer>
+</main>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+function limits(width, mode) { const modulus = 2 ** width; return {modulus, min:mode === 'signed' ? -modulus/2 : 0, max:mode === 'signed' ? modulus/2-1 : modulus-1}; }
+function calculate(a,b,op,width,mode) {
+  const {modulus,min,max}=limits(width,mode);
+  const exact=op==='+'?a+b:op==='-'?a-b:a*b;
+  const raw=((exact%modulus)+modulus)%modulus;
+  const signed=raw>=modulus/2?raw-modulus:raw;
+  return {exact,raw,signed,stored:mode==='signed'?signed:raw,overflow:exact<min||exact>max,min,max,modulus,binary:raw.toString(2).padStart(width,'0')};
+}
+let current=null;
+function show() {
+  const width=Number($('width').value),mode=$('mode').value,{min,max}=limits(width,mode);
+  $('range').textContent=`Representable range: ${min} to ${max}`;
+  for(const id of ['a','b']) {$(id).min=min;$(id).max=max;}
+  const a=Number($('a').value),b=Number($('b').value),op=$('op').value;
+  if(!$('a').value.trim()||!$('b').value.trim()||!Number.isInteger(a)||!Number.isInteger(b)||a<min||a>max||b<min||b>max) {
+    $('error').textContent=`Enter whole numbers from ${min} to ${max} for both inputs.`;
+    $('output').classList.add('hidden');$('step-back').disabled=true;$('step-forward').disabled=true;current=null;return;
+  }
+  $('error').textContent='';$('output').classList.remove('hidden');$('step-back').disabled=false;$('step-forward').disabled=false;
+  current=calculate(a,b,op,width,mode);
+  const r=current;
+  $('exact').textContent=r.exact;$('stored').textContent=r.stored;
+  $('status').className=`status${r.overflow?' overflow':''}`;
+  $('status').textContent=r.overflow?`Out of range: ${r.exact} cannot fit. The modeled result is ${r.stored}.`:`Fits in ${width} bits. No arithmetic overflow.`;
+  $('bits').style.gridTemplateColumns=`repeat(${width},1fr)`;
+  $('bits').replaceChildren();
+  [...r.binary].forEach((value,i)=>{
+    const bit=document.createElement('div');bit.className=`bit${value==='1'?' on':''}${i===0&&mode==='signed'?' sign':''}`;
+    const digit=document.createElement('span');digit.textContent=value;
+    const weight=document.createElement('small');weight.textContent=i===0&&mode==='signed'?`−${2**(width-1)}`:2**(width-i-1);
+    bit.append(digit,weight);$('bits').append(bit);
+  });
+  $('bits').setAttribute('aria-label',`Binary ${r.binary}`);
+  $('bit-note').textContent=mode==='signed'?'The highlighted leftmost bit has a negative weight in two’s complement.':'Each bit has a positive weight; add the weights of the 1 bits.';
+  $('marker').style.left=`${100*(r.stored-min)/(max-min)}%`;
+  $('min-label').textContent=min;$('max-label').textContent=max;
+  const steps=[`Calculate without a width limit: ${a} ${op==='*'?'×':op} ${b} = ${r.exact}.`,`Keep the lowest ${width} bits: normalized remainder modulo ${r.modulus} = ${r.raw}.`,mode==='signed'&&r.raw>=r.modulus/2?`Interpret as signed: ${r.raw} − ${r.modulus} = ${r.signed}.`:`Interpret as ${mode}: stored value = ${r.stored}.`];
+  $('steps').replaceChildren(...steps.map(s=>{const li=document.createElement('li');li.textContent=s;return li;}));
+  $('as-unsigned').textContent=r.raw;$('as-signed').textContent=r.signed;
+}
+function preset(mode,a,op,b) {$('width').value='8';$('mode').value=mode;$('a').value=a;$('op').value=op;$('b').value=b;show();}
+$('calculator').addEventListener('submit',e=>{e.preventDefault();show();});
+for(const id of ['a','b']) $(id).addEventListener('input',show);
+$('op').addEventListener('change',show);
+for(const id of ['width','mode']) $(id).addEventListener('change',()=>{const {min,max}=limits(Number($('width').value),$('mode').value);for(const input of ['a','b']){const value=Number($(input).value);if($(input).value.trim()&&Number.isInteger(value))$(input).value=Math.max(min,Math.min(max,value));}show();});
+$('unsigned-example').addEventListener('click',()=>preset('unsigned',255,'+',1));
+$('signed-example').addEventListener('click',()=>preset('signed',127,'+',1));
+$('negative-example').addEventListener('click',()=>preset('unsigned',0,'-',1));
+$('multiply-example').addEventListener('click',()=>preset('unsigned',20,'*',20));
+function step(op){if(!current)return;$('a').value=current.stored;$('b').value=1;$('op').value=op;show();}
+$('step-back').addEventListener('click',()=>step('-'));$('step-forward').addEventListener('click',()=>step('+'));
+const questions=[{text:'For an unsigned 8-bit value, what is stored after 250 + 10?',a:250,b:10,op:'+',mode:'unsigned',width:8},{text:'In our signed 8-bit model, what is stored after 127 + 1?',a:127,b:1,op:'+',mode:'signed',width:8},{text:'For an unsigned 4-bit value, what is stored after 0 − 1?',a:0,b:1,op:'-',mode:'unsigned',width:4},{text:'For an unsigned 8-bit value, what is stored after 20 × 20?',a:20,b:20,op:'*',mode:'unsigned',width:8}];let questionIndex=0;
+$('quiz').addEventListener('submit',e=>{e.preventDefault();const q=questions[questionIndex],r=calculate(q.a,q.b,q.op,q.width,q.mode),answer=$('answer').value;if(!answer.trim()||!Number.isInteger(Number(answer))){$('feedback').textContent='Enter a whole number first.';return;}$('feedback').textContent=Number(answer)===r.stored?`Correct! ${r.exact} becomes bit-pattern value ${r.raw} modulo ${r.modulus}, interpreted as ${r.stored}.`:`Try again. Start with ${r.exact} and reduce it modulo ${r.modulus}; then apply the stated interpretation.`;});
+$('next-question').addEventListener('click',()=>{questionIndex=(questionIndex+1)%questions.length;$('question').textContent=questions[questionIndex].text;$('answer').value='';$('feedback').textContent='';});
+show();
+</script>
+</body>
+</html>
